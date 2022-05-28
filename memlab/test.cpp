@@ -1,14 +1,16 @@
 #include <iostream>
 using namespace std;
 
-#define BMP_LEN (255)
-unsigned long long qbmp[BMP_LEN] = {};
+#define qword unsigned long long
 
-#define BITS (64) 
+#define BMP_LEN (2048)
+qword qbmp[BMP_LEN] = {};
+
+#define BITS (32) 
 
 #define lowbit(x) ((x)&(-(x)))
 
-int num(unsigned long long x) {
+int num(qword x) {
 	switch (x) {
 		case 0x0000000000000001: return  0;
 		case 0x0000000000000002: return  1;
@@ -82,7 +84,7 @@ int num(unsigned long long x) {
 int n, m;
 
 void printx(int x) {
-	for (int i = 0 ; i < 63 ; i ++) {
+	for (int i = 0 ; i < BITS ; i ++) {
 		putchar (((x >> i) & 1) + '0');
 	}
 	putchar ('\n');
@@ -92,38 +94,63 @@ int main(int argc, const char **argv) {
 	cin >> n >> m;
 	getchar();
 	for (int i = 0 ; i < n / BITS ; i ++) {
-		unsigned long long c = 0;
+		qword c = 0;
 		for (int j = 0 ; j < BITS ; j ++) {
-			unsigned long long ch = getchar();
-			c |= ((unsigned long long)(ch - '0')) << j; 
+			qword ch = getchar();
+			c |= ((qword)(ch - '0')) << j; 
 		}
 		qbmp[i] = c;
 	}
 	qbmp[n / BITS] = 0xFFFFFFFFFFFFFFFF;
 	qbmp[n / BITS + 1] = 0xFFFFFFFFFFFFFFFF;
 	qbmp[n / BITS + 2] = 0xFFFFFFFFFFFFFFFF;
+	qbmp[n / BITS + 3] = 0xFFFFFFFFFFFFFFFF;
 	putchar ('\n');
-	unsigned long long x = qbmp[0];
+	qword x = qbmp[0];
 	int c = 1, p = 0;
-	while (c <= (n / BITS + 1)) {
+	while (c <= (n / BITS)) {
 		printf ("c %d p %d\n", c, p); 
 		printf ("CUR       "); printx(x);
-		unsigned int free = num(lowbit(x));
+
+		int free = num(lowbit(x));
+		if (free > 32) {
+			//TODO
+		}
 		x >>= free;
 		printf ("MOVE FREE "); printx(x);
-		unsigned int busy = num(lowbit(~x));
-		x >>= busy;
-		printf ("MOVE BUSY "); printx(x);
-		unsigned long long next = qbmp[c] >> p;
-		next |= qbmp[c + 1] << p;
-		x |= next << (BITS - free - busy);
-		printf ("ADD       "); printx(next << (BITS - free - busy)); 
+		
+		int shift = BITS - free;
+		qword next = qbmp[c] >> p;
+		next |= qbmp[c + 1] << (BITS - p);
+		x |= (next << shift);
+		printf ("ADD       "); printx(next); 
 		printf ("NOW       "); printx(x);
-		p += free + busy;
+		p += free;
 		if (p >= BITS) {
 			p -= BITS;
 			c ++;
 		}
+		
+		
+		int busy = num(lowbit(~x));
+		if (busy > 32) {
+			//TODO
+		}
+		x >>= busy;
+		printf ("MOVE BUSY "); printx(x);
+
+		shift = BITS - busy;
+		next = qbmp[c] >> p;
+		next |= qbmp[c + 1] << (BITS - p);
+		x |= (next << shift);
+		printf ("ADD       "); printx(next); 
+		printf ("NOW       "); printx(x);
+		p += busy;
+		if (p >= BITS) {
+			p -= BITS;
+			c ++;
+		}
+		
 		printf ("free: %d ; busy %d\n", free, busy);
 	}
 	return 0;
